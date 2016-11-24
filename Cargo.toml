@@ -1,0 +1,7 @@
+[package]
+name = "cargo-deps_prune"
+version = "0.1.0"
+authors = ["ustulation <ustulation@gmail.com>"]
+
+[dependencies]
+unwrap = "*"
