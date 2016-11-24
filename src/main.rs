@@ -27,11 +27,21 @@ fn search_for_deps(path: PathBuf) {
         return;
     }
 
+    let dir = unwrap!(path.read_dir());
     if path.ends_with("deps") {
-        let deps = unwrap!(path.read_dir());
-        prune(deps);
+        prune(dir);
     } else {
-        search_for_deps(path);
+        for content in dir {
+            let entry = match content {
+                Ok(entry) => entry,
+                Err(e) => {
+                    println!("Could not evaluate dir: {:?}", e);
+                    continue;
+                }
+            };
+
+            search_for_deps(entry.path());
+        }
     }
 }
 
