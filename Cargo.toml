@@ -8,4 +8,6 @@ repository = "https://github.com/ustulation/cargo-prune"
 version = "0.1.0"
 
 [dependencies]
+docopt = "~0.6.86"
+rustc-serialize = "~0.3.21"
 unwrap = "~1.1.0"
