@@ -15,6 +15,6 @@ recursively searched and pruned of duplicate library dependencies.
 Currently this only works for `.rlib` dependencies.
 
 E.g.:
-`./cargo-prune`
-`./cargo-prune --target=some/path`
-`cargo prune` (if installed to cargo bin directory)
+- `./cargo-prune`
+- `./cargo-prune --target=some/path`
+- `cargo prune` (if installed to cargo bin directory)
