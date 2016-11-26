@@ -13,3 +13,8 @@ target directory. The target directory can have any complex hierarchy - they wil
 recursively searched and pruned of duplicate library dependencies.
 
 Currently this only works for `.rlib` dependencies.
+
+E.g.:
+`./cargo-prune`
+`./cargo-prune --target=some/path`
+`cargo prune` (if installed to cargo bin directory)

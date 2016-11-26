@@ -71,7 +71,7 @@ fn search_for_deps(path: PathBuf) {
 
     let dir = unwrap!(path.read_dir());
     if path.ends_with("deps") {
-        println!("* Processing {:?} ...", path);
+        println!("* Processing {:?}", path);
         prune(dir);
     } else {
         for content in dir {
@@ -116,16 +116,18 @@ fn prune(dir: ReadDir) {
 
     for (lib, mut lib_paths) in libs.into_iter() {
         if lib_paths.len() < 2 {
-            println!("    No duplicates for {:?}.", lib);
+            println!("    No duplicates for {:?}", lib);
             continue;
         }
 
-        println!("    Pruning for lib {:?} ...", lib);
+        println!("    Pruning for lib {:?}", lib);
         let _ = lib_paths.pop();
         for lib_path in lib_paths {
-            println!("      Deleting {:?}", lib_path);
-            if let Err(e) = fs::remove_file(lib_path.clone()) {
-                println!("      ### WARN Unable to delete {:?}: {:?}.", lib_path, e);
+            print!("      Deleting {:?} ... ", lib_path);
+            if let Err(e) = fs::remove_file(lib_path) {
+                println!("ERROR: {:?}", e);
+            } else {
+                println!("ok");
             }
         }
     }
