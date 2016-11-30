@@ -24,7 +24,7 @@ use std::path::PathBuf;
 
 static USAGE: &'static str = "
 Usage:
-  cargo-prune [options]
+  cargo prune [options]
 
 Options:
   --target <path>  Custom target directory to search for dependencies.

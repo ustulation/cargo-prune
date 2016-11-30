@@ -14,7 +14,8 @@ recursively searched and pruned of duplicate library dependencies.
 
 Currently this only works for `.rlib` dependencies.
 
+You will need to cargo install it (i.e. should be in `~/.cargo/bin/` in linux etc.) for it to work.
+
 E.g.:
-- `./cargo-prune`
-- `./cargo-prune --target=some/path`
 - `cargo prune` (if installed to cargo bin directory)
+- `cargo prune --target some/path` (if installed to cargo bin directory)
