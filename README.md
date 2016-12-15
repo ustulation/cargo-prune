@@ -20,5 +20,3 @@ E.g.:
 
 - `cargo prune` (if installed to cargo bin directory)
 - `cargo prune --target some/path` (if installed to cargo bin directory)
-
-999 xx 99
