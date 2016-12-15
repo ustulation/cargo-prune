@@ -10,6 +10,9 @@
 //! recursively searched and pruned of duplicate library dependencies.
 //!
 //! Currently this only works for `.rlib` dependencies.
+//! New stuff
+
+#![allow(unused)]
 
 extern crate docopt;
 extern crate rustc_serialize;
@@ -21,6 +24,25 @@ use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::fs::{self, ReadDir};
 use std::path::PathBuf;
+
+mod foo {
+    pub struct Foo;
+}
+
+mod bar {
+    pub struct Foo;
+}
+
+mod baz {
+    use foo::*;
+
+    mod inner {
+        use bar::*;
+        use super::*;
+
+        const FOO: Foo = Foo;
+    }
+}
 
 static USAGE: &'static str = "
 Usage:
