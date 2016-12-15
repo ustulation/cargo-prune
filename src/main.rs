@@ -11,6 +11,8 @@
 //!
 //! Currently this only works for `.rlib` dependencies.
 
+#![allow(unused)]
+
 extern crate docopt;
 extern crate rustc_serialize;
 #[macro_use]
@@ -21,6 +23,25 @@ use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::fs::{self, ReadDir};
 use std::path::PathBuf;
+
+mod foo {
+    pub struct Foo;
+}
+
+mod bar {
+    pub struct Foo;
+}
+
+mod baz {
+    use foo::*;
+
+    mod inner {
+        use bar::*;
+        use super::*;
+
+        const FOO: Foo = Foo;
+    }
+}
 
 static USAGE: &'static str = "
 Usage:
