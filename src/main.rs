@@ -28,6 +28,7 @@ Usage:
 
 Options:
   --target <path>  Custom target directory to search for dependencies.
+  -v, --version    Display the version and exit.
   -h, --help       Display this help message and exit.
 ";
 
@@ -36,6 +37,7 @@ const DEFAULT_TARGET: &'static str = "./target";
 #[derive(Debug, RustcDecodable)]
 struct Args {
     flag_target: Option<String>,
+    flag_version: bool,
     flag_help: bool,
 }
 
@@ -57,6 +59,10 @@ fn main() {
     let args: Args = Docopt::new(USAGE)
         .and_then(|d| d.decode())
         .unwrap_or_else(|e| e.exit());
+
+    if args.flag_version {
+        return println!("{}", env!("CARGO_PKG_VERSION"));
+    }
 
     let target = match args.flag_target {
         Some(path) => PathBuf::from(path),
