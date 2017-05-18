@@ -54,7 +54,9 @@ macro_rules! dir_content_path {
 }
 
 fn main() {
-    let args: Args = Docopt::new(USAGE).and_then(|d| d.decode()).unwrap_or_else(|e| e.exit());
+    let args: Args = Docopt::new(USAGE)
+        .and_then(|d| d.decode())
+        .unwrap_or_else(|e| e.exit());
 
     let target = match args.flag_target {
         Some(path) => PathBuf::from(path),
@@ -104,14 +106,12 @@ fn prune(dir: ReadDir) {
 
         let lib_paths = libs.entry(lib).or_insert_with(|| Vec::with_capacity(2));
         lib_paths.push(path);
-        lib_paths.sort_by(|a, b| {
-            if unwrap!(unwrap!(a.metadata()).modified()) <
-               unwrap!(unwrap!(b.metadata()).modified()) {
-                Ordering::Less
-            } else {
-                Ordering::Greater
-            }
-        });
+        lib_paths.sort_by(|a, b| if unwrap!(unwrap!(a.metadata()).modified()) <
+                                    unwrap!(unwrap!(b.metadata()).modified()) {
+                              Ordering::Less
+                          } else {
+                              Ordering::Greater
+                          });
     }
 
     for (lib, mut lib_paths) in libs.into_iter() {
