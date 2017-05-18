@@ -28,6 +28,7 @@ Usage:
 
 Options:
   --target <path>  Custom target directory to search for dependencies.
+  -v, --version    Display the version and exit.
   -h, --help       Display this help message and exit.
 ";
 
@@ -36,6 +37,7 @@ const DEFAULT_TARGET: &'static str = "./target";
 #[derive(Debug, RustcDecodable)]
 struct Args {
     flag_target: Option<String>,
+    flag_version: bool,
     flag_help: bool,
 }
 
@@ -54,17 +56,23 @@ macro_rules! dir_content_path {
 }
 
 fn main() {
-    let args: Args = Docopt::new(USAGE).and_then(|d| d.decode()).unwrap_or_else(|e| e.exit());
+    let args: Args = Docopt::new(USAGE)
+        .and_then(|d| d.decode())
+        .unwrap_or_else(|e| e.exit());
+
+    if args.flag_version {
+        return println!("{}", env!("CARGO_PKG_VERSION"));
+    }
 
     let target = match args.flag_target {
         Some(path) => PathBuf::from(path),
         None => PathBuf::from(DEFAULT_TARGET),
     };
 
-    search_for_deps(target);
+    search_for_deps(&target);
 }
 
-fn search_for_deps(path: PathBuf) {
+fn search_for_deps(path: &PathBuf) {
     if !path.is_dir() {
         return;
     }
@@ -75,7 +83,7 @@ fn search_for_deps(path: PathBuf) {
         prune(dir);
     } else {
         for content in dir {
-            search_for_deps(dir_content_path!(content));
+            search_for_deps(&dir_content_path!(content));
         }
     }
 }
@@ -104,17 +112,15 @@ fn prune(dir: ReadDir) {
 
         let lib_paths = libs.entry(lib).or_insert_with(|| Vec::with_capacity(2));
         lib_paths.push(path);
-        lib_paths.sort_by(|a, b| {
-            if unwrap!(unwrap!(a.metadata()).modified()) <
-               unwrap!(unwrap!(b.metadata()).modified()) {
-                Ordering::Less
-            } else {
-                Ordering::Greater
-            }
-        });
+        lib_paths.sort_by(|a, b| if unwrap!(unwrap!(a.metadata()).modified()) <
+                                    unwrap!(unwrap!(b.metadata()).modified()) {
+                              Ordering::Less
+                          } else {
+                              Ordering::Greater
+                          });
     }
 
-    for (lib, mut lib_paths) in libs.into_iter() {
+    for (lib, mut lib_paths) in libs {
         if lib_paths.len() < 2 {
             println!("    No duplicates for {:?}", lib);
             continue;
