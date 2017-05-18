@@ -63,10 +63,10 @@ fn main() {
         None => PathBuf::from(DEFAULT_TARGET),
     };
 
-    search_for_deps(target);
+    search_for_deps(&target);
 }
 
-fn search_for_deps(path: PathBuf) {
+fn search_for_deps(path: &PathBuf) {
     if !path.is_dir() {
         return;
     }
@@ -77,7 +77,7 @@ fn search_for_deps(path: PathBuf) {
         prune(dir);
     } else {
         for content in dir {
-            search_for_deps(dir_content_path!(content));
+            search_for_deps(&dir_content_path!(content));
         }
     }
 }
@@ -114,7 +114,7 @@ fn prune(dir: ReadDir) {
                           });
     }
 
-    for (lib, mut lib_paths) in libs.into_iter() {
+    for (lib, mut lib_paths) in libs {
         if lib_paths.len() < 2 {
             println!("    No duplicates for {:?}", lib);
             continue;
