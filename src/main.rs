@@ -130,29 +130,35 @@ fn prune(dir: ReadDir) {
         }
 
         println!("    Pruning for lib {:?}", lib);
-        let latest = unwrap!(unwrap!(unwrap!(lib_paths.pop()).metadata()).modified());
-        for lib_path in lib_paths {
-            let earlier = unwrap!(unwrap!(lib_path.metadata()).modified());
-            let rm = ALLOWED_DURATION_SEC == 0
-                || match latest.duration_since(earlier) {
+        let latest = unwrap!(unwrap!(unwrap!(lib_paths.last()).metadata()).modified());
+        let rm = ALLOWED_DURATION_SEC == 0
+            || lib_paths.iter().any(|lib_path| {
+                let earlier = unwrap!(unwrap!(lib_path.metadata()).modified());
+                match latest.duration_since(earlier) {
                     Ok(dur) => dur.as_secs() > ALLOWED_DURATION_SEC,
                     Err(_) => false, // means the delta was negative. Ignore this as it's
                                      // practically only possible for files created/touched almost
                                      // simultaneously.
-                };
-            if rm {
+                }
+            });
+        if rm {
+            if ALLOWED_DURATION_SEC == 0 {
+                let _ = lib_paths.pop();
+            }
+            lib_paths.iter().for_each(|lib_path| {
                 print!("      Deleting {:?} ... ", lib_path);
                 if let Err(e) = fs::remove_file(lib_path) {
                     println!("ERROR: {:?}", e);
                 } else {
                     println!("ok");
                 }
-            } else {
-                print!(
-                    "      NOT Deleting {:?} as difference with duplicate is < {}secs... ",
-                    lib_path, ALLOWED_DURATION_SEC
-                );
-            }
+            });
+        } else {
+            print!(
+                "      NOT Deleting any duplicates for {:?} as difference with duplicate is <
+                {}secs... ",
+                lib, ALLOWED_DURATION_SEC
+            );
         }
     }
 }
