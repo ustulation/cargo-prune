@@ -52,7 +52,7 @@ macro_rules! dir_content_path {
         };
 
         entry.path()
-    }}
+    }};
 }
 
 fn main() {
@@ -95,29 +95,29 @@ fn prune(dir: ReadDir) {
         let path = dir_content_path!(content);
 
         let lib = match path.file_stem() {
-            Some(stem) => {
-                match stem.to_str() {
-                    Some(stem) => {
-                        let splits: Vec<_> = stem.rsplitn(2, '-').collect();
-                        if splits.len() != 2 {
-                            continue;
-                        }
-                        splits[1].to_string()
+            Some(stem) => match stem.to_str() {
+                Some(stem) => {
+                    let splits: Vec<_> = stem.rsplitn(2, '-').collect();
+                    if splits.len() != 2 {
+                        continue;
                     }
-                    None => continue,
+                    splits[1].to_string()
                 }
-            }
+                None => continue,
+            },
             None => continue,
         };
 
         let lib_paths = libs.entry(lib).or_insert_with(|| Vec::with_capacity(2));
         lib_paths.push(path);
-        lib_paths.sort_by(|a, b| if unwrap!(unwrap!(a.metadata()).modified()) <
-                                    unwrap!(unwrap!(b.metadata()).modified()) {
-                              Ordering::Less
-                          } else {
-                              Ordering::Greater
-                          });
+        lib_paths.sort_by(|a, b| {
+            if unwrap!(unwrap!(a.metadata()).modified()) < unwrap!(unwrap!(b.metadata()).modified())
+            {
+                Ordering::Less
+            } else {
+                Ordering::Greater
+            }
+        });
     }
 
     for (lib, mut lib_paths) in libs {
