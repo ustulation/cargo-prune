@@ -33,6 +33,9 @@ Options:
 ";
 
 const DEFAULT_TARGET: &'static str = "./target";
+/// Allowed duration from the latest for duplicates to exist. Make it 0 for there to be always 0
+/// duplicates.
+const ALLOWED_DURATION_SEC: u64 = 2 * 3600; // 2hrs
 
 #[derive(Debug, RustcDecodable)]
 struct Args {
@@ -127,13 +130,28 @@ fn prune(dir: ReadDir) {
         }
 
         println!("    Pruning for lib {:?}", lib);
-        let _ = lib_paths.pop();
+        let latest = unwrap!(unwrap!(unwrap!(lib_paths.pop()).metadata()).modified());
         for lib_path in lib_paths {
-            print!("      Deleting {:?} ... ", lib_path);
-            if let Err(e) = fs::remove_file(lib_path) {
-                println!("ERROR: {:?}", e);
+            let earlier = unwrap!(unwrap!(lib_path.metadata()).modified());
+            let rm = ALLOWED_DURATION_SEC == 0
+                || match latest.duration_since(earlier) {
+                    Ok(dur) => dur.as_secs() > ALLOWED_DURATION_SEC,
+                    Err(_) => false, // means the delta was negative. Ignore this as it's
+                                     // practically only possible for files created/touched almost
+                                     // simultaneously.
+                };
+            if rm {
+                print!("      Deleting {:?} ... ", lib_path);
+                if let Err(e) = fs::remove_file(lib_path) {
+                    println!("ERROR: {:?}", e);
+                } else {
+                    println!("ok");
+                }
             } else {
-                println!("ok");
+                print!(
+                    "      NOT Deleting {:?} as difference with duplicate is < {}secs... ",
+                    lib_path, ALLOWED_DURATION_SEC
+                );
             }
         }
     }
