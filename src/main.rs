@@ -33,6 +33,9 @@ Options:
 ";
 
 const DEFAULT_TARGET: &'static str = "./target";
+/// Allowed duration from the latest for duplicates to exist. Make it 0 for there to be always 0
+/// duplicates.
+const ALLOWED_DURATION_SEC: u64 = 2 * 3600; // 2hrs
 
 #[derive(Debug, RustcDecodable)]
 struct Args {
@@ -52,7 +55,7 @@ macro_rules! dir_content_path {
         };
 
         entry.path()
-    }}
+    }};
 }
 
 fn main() {
@@ -95,29 +98,29 @@ fn prune(dir: ReadDir) {
         let path = dir_content_path!(content);
 
         let lib = match path.file_stem() {
-            Some(stem) => {
-                match stem.to_str() {
-                    Some(stem) => {
-                        let splits: Vec<_> = stem.rsplitn(2, '-').collect();
-                        if splits.len() != 2 {
-                            continue;
-                        }
-                        splits[1].to_string()
+            Some(stem) => match stem.to_str() {
+                Some(stem) => {
+                    let splits: Vec<_> = stem.rsplitn(2, '-').collect();
+                    if splits.len() != 2 {
+                        continue;
                     }
-                    None => continue,
+                    splits[1].to_string()
                 }
-            }
+                None => continue,
+            },
             None => continue,
         };
 
         let lib_paths = libs.entry(lib).or_insert_with(|| Vec::with_capacity(2));
         lib_paths.push(path);
-        lib_paths.sort_by(|a, b| if unwrap!(unwrap!(a.metadata()).modified()) <
-                                    unwrap!(unwrap!(b.metadata()).modified()) {
-                              Ordering::Less
-                          } else {
-                              Ordering::Greater
-                          });
+        lib_paths.sort_by(|a, b| {
+            if unwrap!(unwrap!(a.metadata()).modified()) < unwrap!(unwrap!(b.metadata()).modified())
+            {
+                Ordering::Less
+            } else {
+                Ordering::Greater
+            }
+        });
     }
 
     for (lib, mut lib_paths) in libs {
@@ -127,14 +130,35 @@ fn prune(dir: ReadDir) {
         }
 
         println!("    Pruning for lib {:?}", lib);
-        let _ = lib_paths.pop();
-        for lib_path in lib_paths {
-            print!("      Deleting {:?} ... ", lib_path);
-            if let Err(e) = fs::remove_file(lib_path) {
-                println!("ERROR: {:?}", e);
-            } else {
-                println!("ok");
+        let latest = unwrap!(unwrap!(unwrap!(lib_paths.last()).metadata()).modified());
+        let rm = ALLOWED_DURATION_SEC == 0
+            || lib_paths.iter().any(|lib_path| {
+                let earlier = unwrap!(unwrap!(lib_path.metadata()).modified());
+                match latest.duration_since(earlier) {
+                    Ok(dur) => dur.as_secs() > ALLOWED_DURATION_SEC,
+                    Err(_) => false, // means the delta was negative. Ignore this as it's
+                                     // practically only possible for files created/touched almost
+                                     // simultaneously.
+                }
+            });
+        if rm {
+            if ALLOWED_DURATION_SEC == 0 {
+                let _ = lib_paths.pop();
             }
+            lib_paths.iter().for_each(|lib_path| {
+                print!("      Deleting {:?} ... ", lib_path);
+                if let Err(e) = fs::remove_file(lib_path) {
+                    println!("ERROR: {:?}", e);
+                } else {
+                    println!("ok");
+                }
+            });
+        } else {
+            print!(
+                "      NOT Deleting any duplicates for {:?} as difference with duplicate is <
+                {}secs... ",
+                lib, ALLOWED_DURATION_SEC
+            );
         }
     }
 }
