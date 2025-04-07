@@ -12,17 +12,18 @@
 //! Currently this only works for `.rlib` dependencies.
 
 extern crate docopt;
-extern crate rustc_serialize;
 #[macro_use]
 extern crate unwrap;
+extern crate serde;
 
 use docopt::Docopt;
+use serde::Deserialize;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::fs::{self, ReadDir};
 use std::path::PathBuf;
 
-static USAGE: &'static str = "
+static USAGE: &str = "
 Usage:
   cargo prune [options]
 
@@ -32,16 +33,15 @@ Options:
   -h, --help       Display this help message and exit.
 ";
 
-const DEFAULT_TARGET: &'static str = "./target";
+const DEFAULT_TARGET: &str = "./target";
 /// Allowed duration from the latest for duplicates to exist. Make it 0 for there to be always 0
 /// duplicates.
 const ALLOWED_DURATION_SEC: u64 = 2 * 3600; // 2hrs
 
-#[derive(Debug, RustcDecodable)]
+#[derive(Debug, Deserialize)]
 struct Args {
     flag_target: Option<String>,
     flag_version: bool,
-    flag_help: bool,
 }
 
 macro_rules! dir_content_path {
@@ -60,7 +60,7 @@ macro_rules! dir_content_path {
 
 fn main() {
     let args: Args = Docopt::new(USAGE)
-        .and_then(|d| d.decode())
+        .and_then(|d| d.deserialize())
         .unwrap_or_else(|e| e.exit());
 
     if args.flag_version {
